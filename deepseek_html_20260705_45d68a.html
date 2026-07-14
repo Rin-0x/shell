@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Hacked By Rin0x</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+        }
+
+        .terminal {
+            background: #0d0d0d;
+            border: 1px solid #1f3f1f;
+            border-radius: 8px;
+            padding: 30px 35px;
+            max-width: 750px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.03);
+            min-height: 300px;
+        }
+
+        .line {
+            color: #00ff41;
+            font-size: clamp(1rem, 2.2vw, 1.25rem);
+            letter-spacing: 0.5px;
+            line-height: 1.8;
+            min-height: 1.8em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .line .highlight {
+            color: #ffaa44;
+        }
+        .line .red {
+            color: #ff4444;
+        }
+        .line .cyan {
+            color: #33ccff;
+        }
+        .line .purple {
+            color: #bb99ff;
+        }
+        .line .green {
+            color: #88ff88;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background: #00ff41;
+            vertical-align: text-bottom;
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .prompt {
+            color: #33cc33;
+            margin-right: 10px;
+        }
+
+        .divider {
+            border: 0;
+            height: 1px;
+            background: #1a2a1a;
+            margin: 14px 0;
+            opacity: 0.3;
+        }
+
+        .footer {
+            color: #1a3a1a;
+            font-size: 0.6rem;
+            text-align: center;
+            margin-top: 16px;
+            letter-spacing: 3px;
+            border-top: 1px solid #0f1f0f;
+            padding-top: 12px;
+            opacity: 0.4;
+        }
+
+        @media (max-width: 500px) {
+            .terminal { padding: 20px; }
+            .line { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="terminal" id="terminal">
+    <!-- Di sini baris-baris akan muncul -->
+    <div id="output"></div>
+    <div class="footer" id="footer" style="display:none;">✦ ghost hunter illusion · 2026 ✦</div>
+</div>
+
+<script>
+    // ── Isi teks yang akan diketik ──
+    const lines = [
+        { text: 'root@server:~$ ', isPrompt: true, delay: 400 },
+        { text: 'Hacked By ', isPrompt: false },
+        { text: 'Rin0x', class: 'green' },
+        { text: ' | ', class: 'highlight' },
+        { text: 'Ghost Hunter Illusion', class: 'purple' },
+        { text: '', isBreak: true },
+        { text: '▸ ', class: 'cyan' },
+        { text: 'access granted', class: 'green' },
+        { text: ' ◂', class: 'cyan' },
+        { text: '', isBreak: true },
+        { text: '⚡ Greetz : ', class: 'highlight' },
+        { text: 'IdiotPeople', class: 'cyan' },
+        { text: ' - ', class: 'highlight' },
+        { text: 'Exn0', class: 'cyan' },
+        { text: ' - ', class: 'highlight' },
+        { text: 'D0it', class: 'cyan' },
+        { text: ' - ', class: 'highlight' },
+        { text: 'Nusantara code', class: 'cyan' },
+        { text: ' - ', class: 'highlight' },
+        { text: 'Donuts', class: 'cyan' },
+        { text: '', isBreak: true },
+        { text: 'root@server:~$ ', isPrompt: true, delay: 200 },
+        { text: 'whoami', class: 'highlight' },
+        { text: '', isBreak: true },
+        { text: 'root', class: 'green' },
+        { text: '', isBreak: true },
+        { text: 'root@server:~$ ', isPrompt: true, delay: 200 },
+        { text: 'echo "', class: 'highlight' },
+        { text: 'Welcome to the system', class: 'green' },
+        { text: '"', class: 'highlight' },
+        { text: '', isBreak: true },
+        { text: 'Welcome to the system', class: 'green' },
+    ];
+
+    const output = document.getElementById('output');
+    const footer = document.getElementById('footer');
+    let currentLineDiv = null;
+    let charIndex = 0;
+    let lineIndex = 0;
+    let isTyping = false;
+    let isPromptLine = false;
+    let promptText = '';
+
+    // Fungsi untuk menambahkan baris baru
+    function createLine() {
+        const div = document.createElement('div');
+        div.className = 'line';
+        output.appendChild(div);
+        return div;
+    }
+
+    // Fungsi untuk mengetik satu baris (dari array segmen)
+    function typeSegments(segments, callback) {
+        let segIndex = 0;
+        let charPos = 0;
+        let currentSegment = segments[segIndex];
+        let div = createLine();
+
+        // Jika segmen pertama adalah prompt, kita tambahkan dulu
+        if (segments[0] && segments[0].isPrompt) {
+            const promptSpan = document.createElement('span');
+            promptSpan.className = 'prompt';
+            promptSpan.textContent = segments[0].text;
+            div.appendChild(promptSpan);
+            segIndex = 1;
+            // lanjut ke segmen berikutnya
+        }
+
+        function typeNextChar() {
+            if (segIndex >= segments.length) {
+                // Selesai semua segmen
+                callback();
+                return;
+            }
+
+            let seg = segments[segIndex];
+            if (seg.isBreak) {
+                // Baris kosong
+                const br = document.createElement('div');
+                br.style.height = '0.6em';
+                output.appendChild(br);
+                segIndex++;
+                setTimeout(typeNextChar, 100);
+                return;
+            }
+
+            if (!seg.text) {
+                segIndex++;
+                setTimeout(typeNextChar, 50);
+                return;
+            }
+
+            // Jika belum ada span untuk segmen ini, buat
+            if (!seg._span) {
+                const span = document.createElement('span');
+                if (seg.class) span.className = seg.class;
+                div.appendChild(span);
+                seg._span = span;
+                seg._charIndex = 0;
+            }
+
+            const span = seg._span;
+            const text = seg.text;
+            let idx = seg._charIndex;
+
+            if (idx < text.length) {
+                // Tambahkan satu karakter
+                span.textContent += text[idx];
+                seg._charIndex = idx + 1;
+                // Kecepatan typing
+                const delay = Math.floor(Math.random() * 40) + 30;
+                setTimeout(typeNextChar, delay);
+            } else {
+                // Segmen selesai, lanjut ke segmen berikutnya
+                segIndex++;
+                // Hapus referensi span agar tidak dipakai lagi
+                delete seg._span;
+                setTimeout(typeNextChar, 80);
+            }
+        }
+
+        // Mulai mengetik
+        setTimeout(typeNextChar, 100);
+    }
+
+    // Fungsi untuk memproses semua baris
+    function startTyping() {
+        // Kita kelompokkan baris berdasarkan urutan, tapi kita akan proses per segmen secara manual
+        // Karena struktur lines sudah berupa array segmen, kita bisa langsung proses semua segmen secara berurutan
+        // Namun kita perlu menangani prompt dan break.
+        // Kita akan buat antrian segmen.
+
+        let allSegments = [];
+        let currentGroup = [];
+        let isPromptActive = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const item = lines[i];
+            if (item.isBreak) {
+                // Akhiri group saat ini
+                if (currentGroup.length > 0) {
+                    allSegments.push({ type: 'group', segments: currentGroup });
+                    currentGroup = [];
+                }
+                // Tambahkan break sebagai item terpisah
+                allSegments.push({ type: 'break' });
+                continue;
+            }
+            if (item.isPrompt) {
+                // Prompt dianggap segmen khusus, kita masukkan ke group
+                // Tapi prompt harus menjadi segmen pertama di group
+                // Kita mulai group baru jika belum ada
+                if (currentGroup.length > 0) {
+                    allSegments.push({ type: 'group', segments: currentGroup });
+                    currentGroup = [];
+                }
+                // Tambahkan prompt sebagai segmen
+                currentGroup.push({ text: item.text, isPrompt: true });
+                // Lanjutkan ke item berikutnya (biasanya teks setelah prompt)
+                continue;
+            }
+            // Segmen biasa
+            currentGroup.push(item);
+        }
+
+        // Sisa group
+        if (currentGroup.length > 0) {
+            allSegments.push({ type: 'group', segments: currentGroup });
+        }
+
+        // Sekarang proses allSegments satu per satu
+        let idx = 0;
+
+        function processNext() {
+            if (idx >= allSegments.length) {
+                // Selesai semua, tampilkan footer
+                footer.style.display = 'block';
+                return;
+            }
+
+            const item = allSegments[idx];
+            if (item.type === 'break') {
+                // Tambahkan baris kosong
+                const br = document.createElement('div');
+                br.style.height = '0.6em';
+                output.appendChild(br);
+                idx++;
+                setTimeout(processNext, 200);
+                return;
+            }
+
+            if (item.type === 'group') {
+                const segments = item.segments;
+                // Mulai mengetik group ini
+                typeSegments(segments, function() {
+                    idx++;
+                    // Jeda antar group
+                    setTimeout(processNext, 400);
+                });
+                return;
+            }
+
+            idx++;
+            setTimeout(processNext, 100);
+        }
+
+        // Mulai proses
+        setTimeout(processNext, 300);
+    }
+
+    // Jalankan
+    window.onload = startTyping;
+</script>
+
+</body>
+</html>
